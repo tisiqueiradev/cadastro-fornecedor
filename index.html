@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    Pagina ISOLADA: nenhuma requisicao de rede e permitida (connect-src 'none'), nenhum formulario envia dados
+    (form-action 'none') e so scripts/estilos deste mesmo diretorio rodam. O resultado e um arquivo JSON baixado
+    no computador de quem preenche. Nada aqui conhece o sistema da TFA.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-6XuL2NszzBZ+zY0h1mHgli71zL2yY0t8/lD9zT5LF4A='; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none'; font-src 'none'; frame-src 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Pré-cadastro de fornecedor</title>
+  <style>
+/* Tokens do Outbox (frontend/src/styles/theme.ts), copiados: esta pagina nao importa nada do sistema. */
+:root {
+  --brand-700: #122a5e;
+  --brand-600: #1b44a8;
+  --brand-500: #2154d8;
+  --brand-100: #e7eefe;
+  --brand-50: #f4f7ff;
+  --n-900: #0f172a;
+  --n-700: #334155;
+  --n-500: #64748b;
+  --n-300: #cbd5e1;
+  --n-200: #e2e8f0;
+  --n-100: #f1f5f9;
+  --n-50: #f8fafc;
+  --n-0: #ffffff;
+  --danger: #d92d20;
+  --danger-strong: #b42318;
+  --warning-soft: #fffaeb;
+  --warning-border: #fedf89;
+  --warning-strong: #b54708;
+  --focus: 0 0 0 3px rgba(59, 114, 246, 0.35);
+  --sombra: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --raio: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-700: #7ca3fa;
+    --brand-600: #4f86f7;
+    --brand-500: #2f63e8;
+    --brand-100: #16284f;
+    --brand-50: #0f1b36;
+    --n-900: #f1f5f9;
+    --n-700: #cbd5e1;
+    --n-500: #94a3b8;
+    --n-300: #334260;
+    --n-200: #26324a;
+    --n-100: #1a2438;
+    --n-50: #0b1222;
+    --n-0: #131c31;
+    --danger-strong: #fda29b;
+    --warning-soft: #3a2607;
+    --warning-border: #93370d;
+    --warning-strong: #fec84b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--n-50);
+  color: var(--n-900);
+  font: 0.875rem/1.5 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+.topo {
+  background: var(--n-0);
+  border-bottom: 1px solid var(--n-200);
+  padding: 20px 16px;
+  text-align: center;
+}
+h1 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; }
+h2 { margin: 0 0 4px; font-size: 1rem; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 24px auto 64px;
+  padding: 0 16px;
+  align-items: start;
+}
+.lateral {
+  background: linear-gradient(160deg, var(--brand-700), var(--brand-500));
+  color: #fff;
+  border-radius: var(--raio);
+  padding: 20px;
+  box-shadow: var(--sombra);
+}
+:root .lateral { background: linear-gradient(160deg, #122a5e, #2154d8); }
+.lateral section { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.25); }
+.lateral h2 { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.lateral p { margin: 0; font-size: 0.8125rem; opacity: 0.92; }
+.importante {
+  background: var(--n-0);
+  color: var(--n-700);
+  border-radius: var(--raio);
+  padding: 12px;
+  font-size: 0.8125rem;
+}
+.importante strong { color: var(--n-900); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; }
+.importante p { margin: 4px 0 0; }
+.importante b { color: var(--brand-600); }
+
+.cartao {
+  background: var(--n-0);
+  border: 1px solid var(--n-200);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  margin: 0 0 16px;
+  padding: 16px;
+}
+legend { padding: 0 8px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; color: var(--brand-600); }
+.opcional { color: var(--n-500); font-weight: 400; text-transform: none; letter-spacing: 0; }
+.opcoes { display: flex; gap: 24px; }
+.opcao { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+
+.grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 16px; }
+.campo { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--n-700); text-transform: uppercase; letter-spacing: 0.04em; }
+.campo.dupla { grid-column: span 2; }
+.campo.toda { grid-column: 1 / -1; }
+input:not([type='checkbox']), select, textarea {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--n-900);
+  background: var(--n-0);
+  border: 1px solid var(--n-300);
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-height: 44px;
+  width: 100%;
+}
+textarea { resize: vertical; min-height: 84px; }
+input::placeholder, textarea::placeholder { color: var(--n-500); }
+input:focus, select:focus, textarea:focus, button:focus-visible, pre:focus-visible {
+  outline: none;
+  border-color: var(--brand-400, #3b72f6);
+  box-shadow: var(--focus);
+}
+input[aria-invalid='true'], select[aria-invalid='true'], textarea[aria-invalid='true'] { border-color: var(--danger); }
+input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--brand-500); }
+.erro { color: var(--danger-strong); font-weight: 400; text-transform: none; letter-spacing: 0; min-height: 1em; }
+.aceite { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0 4px; }
+.aceite input { margin-top: 2px; }
+
+.acoes { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; justify-content: center; }
+button {
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 24px;
+  border: 1px solid var(--brand-500);
+  border-radius: 6px;
+  background: var(--brand-500);
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+button:hover { background: var(--brand-600); }
+button.secundario { background: transparent; color: var(--brand-600); }
+button.secundario:hover { background: var(--brand-50); }
+pre {
+  margin: 16px 0 0;
+  padding: 12px;
+  overflow: auto;
+  max-height: 360px;
+  background: var(--n-100);
+  border: 1px solid var(--n-200);
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .grade { grid-template-columns: repeat(2, 1fr); }
+  .campo.dupla { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .grade { grid-template-columns: 1fr; }
+  .opcoes { flex-direction: column; gap: 12px; }
+}
+</style>
+</head>
+<body>
+  <header class="topo">
+    <h1>Solicitação de pré-cadastro de cliente / fornecedor</h1>
+  </header>
+
+  <div class="layout">
+    <aside class="lateral" aria-label="Informações">
+      <section>
+        <h2>Segurança</h2>
+        <p>Seus dados ficam apenas no seu computador até você enviar o arquivo gerado. Nada é transmitido por esta página.</p>
+      </section>
+      <section>
+        <h2>Agilidade</h2>
+        <p>Nosso time analisará sua solicitação com rapidez e eficiência.</p>
+      </section>
+      <section>
+        <h2>Suporte</h2>
+        <p>Dúvidas? Entre em contato com o setor de Compras.</p>
+      </section>
+      <div class="importante">
+        <strong>Importante</strong>
+        <p>O prazo para cadastro e retorno da análise é de até <b>72 horas úteis</b> após o envio da solicitação.</p>
+      </div>
+    </aside>
+
+    <main>
+      <form id="cadastro" novalidate autocomplete="off">
+        <fieldset class="cartao">
+          <legend>Tipo de cadastro</legend>
+          <div class="opcoes">
+            <label class="opcao"><input type="checkbox" name="tipoCliente"> Cliente</label>
+            <label class="opcao"><input type="checkbox" name="tipoFornecedor" checked> Fornecedor</label>
+          </div>
+          <small class="erro" data-erro="tipo"></small>
+        </fieldset>
+
+        <fieldset class="cartao">
+          <legend>Dados da empresa</legend>
+          <div class="grade">
+            <label class="campo">Nome da empresa
+              <input name="nome" maxlength="180" placeholder="Digite o nome da empresa" required>
+              <small class="erro" data-erro="nome"></small>
+            </label>
+            <label class="campo">CNPJ / CPF
+              <input name="documento" inputmode="numeric" maxlength="18" placeholder="Digite o CNPJ ou CPF" required>
+              <small class="erro" data-erro="documento"></small>
+            </label>
+            <label class="campo">E-mail
+              <input name="email" type="email" maxlength="160" placeholder="Digite o e-mail da empresa" required>
+              <small class="erro" data-erro="email"></small>
+            </label>
+            <label class="campo">Telefone
+              <input name="telefone" inputmode="tel" maxlength="20" placeholder="Digite o telefone da empresa" required>
+              <small class="erro" data-erro="telefone"></small>
+            </label>
+            <label class="campo">Contato
+              <input name="contato" maxlength="120" placeholder="Digite o nome do contato" required>
+              <small class="erro" data-erro="contato"></small>
+            </label>
+            <label class="campo">Ramo do fornecedor
+              <input name="ramo" maxlength="120" placeholder="Informe o ramo de atividade" required>
+              <small class="erro" data-erro="ramo"></small>
+            </label>
+            <label class="campo">Estado
+              <select name="estado" required></select>
+            </label>
+            <label class="campo dupla">Cidade do fornecedor
+              <input name="cidade" maxlength="80" placeholder="Digite a cidade" required>
+              <small class="erro" data-erro="cidade"></small>
+            </label>
+            <label class="campo toda">Motivo da solicitação
+              <textarea name="motivo" rows="3" maxlength="500" placeholder="Descreva o motivo da solicitação de cadastro deste fornecedor" required></textarea>
+              <small class="erro" data-erro="motivo"></small>
+            </label>
+            <label class="campo dupla">Nome do requisitante
+              <input name="requisitante" maxlength="120" placeholder="Nome de quem está solicitando na TFA" required>
+              <small class="erro" data-erro="requisitante"></small>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="cartao">
+          <legend>Dados bancários</legend>
+          <div class="grade">
+            <label class="campo">Banco
+              <input name="bancoNome" maxlength="80" required>
+              <small class="erro" data-erro="bancoNome"></small>
+            </label>
+            <label class="campo">Agência
+              <input name="agencia" maxlength="12" required>
+              <small class="erro" data-erro="agencia"></small>
+            </label>
+            <label class="campo">Conta
+              <input name="conta" maxlength="20" required>
+              <small class="erro" data-erro="conta"></small>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="cartao">
+          <legend>Dados Pix <span class="opcional">(opcional)</span></legend>
+          <div class="grade">
+            <label class="campo">CNPJ ou CPF
+              <input name="pixDocumento" inputmode="numeric" maxlength="18">
+              <small class="erro" data-erro="pixDocumento"></small>
+            </label>
+            <label class="campo">Banco
+              <input name="pixBanco" maxlength="80">
+            </label>
+            <label class="campo">Titular da conta
+              <input name="pixTitular" maxlength="120">
+            </label>
+            <label class="campo toda">Chave Pix
+              <input name="pixChave" maxlength="140">
+            </label>
+          </div>
+        </fieldset>
+
+        <label class="aceite">
+          <input type="checkbox" name="aceite" required>
+          Declaro que as informações são verdadeiras e autorizo o uso dos dados para cadastro e pagamentos.
+        </label>
+        <small class="erro" data-erro="aceite"></small>
+
+        <div class="acoes">
+          <button type="submit">Gerar solicitação</button>
+        </div>
+      </form>
+
+      <section id="resultado" class="cartao" hidden>
+        <h2>Solicitação pronta</h2>
+        <p>Baixe o arquivo e envie ao setor de Compras da TFA Logística. Confira os dados antes de enviar.</p>
+        <div class="acoes">
+          <button type="button" id="baixar">Baixar arquivo</button>
+          <button type="button" id="copiar" class="secundario">Copiar conteúdo</button>
+          <button type="button" id="voltar" class="secundario">Editar dados</button>
+        </div>
+        <pre id="previa" tabindex="0"></pre>
+      </section>
+    </main>
+  </div>
+  <script>'use strict';
+
+/**
+ * Cadastro publico de fornecedor. Roda 100% no navegador: nao ha fetch, XHR, storage nem cookies
+ * (a CSP da pagina tambem bloqueia qualquer conexao). O resultado e um arquivo JSON para download.
+ * Toda saida na tela usa textContent; nada e montado como HTML.
+ */
+(function () {
+  var VERSAO = 1;
+  var form = document.getElementById('cadastro');
+  var resultado = document.getElementById('resultado');
+  var previa = document.getElementById('previa');
+  var json = '';
+
+  var apenasDigitos = function (v) { return String(v || '').replace(/\D/g, ''); };
+  var limpar = function (v) { return String(v || '').replace(/\s+/g, ' ').trim(); };
+
+  function cpfValido(c) {
+    if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    for (var t = 9; t < 11; t++) {
+      var soma = 0;
+      for (var i = 0; i < t; i++) soma += Number(c[i]) * (t + 1 - i);
+      var dv = ((soma * 10) % 11) % 10;
+      if (dv !== Number(c[t])) return false;
+    }
+    return true;
+  }
+
+  function cnpjValido(c) {
+    if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
+    for (var t = 12; t < 14; t++) {
+      var soma = 0;
+      var peso = t - 7;
+      for (var i = 0; i < t; i++) {
+        soma += Number(c[i]) * peso--;
+        if (peso < 2) peso = 9;
+      }
+      var dv = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+      if (dv !== Number(c[t])) return false;
+    }
+    return true;
+  }
+
+  var documentoValido = function (d) { return cpfValido(d) || cnpjValido(d); };
+
+  function mascaraDocumento(d) {
+    if (d.length <= 11) {
+      return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return d.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2');
+  }
+
+  function valor(nome) {
+    var el = form.elements[nome];
+    return el ? limpar(el.value) : '';
+  }
+
+  function marcar(nome, mensagem) {
+    var el = form.elements[nome];
+    var aviso = form.querySelector('[data-erro="' + nome + '"]');
+    if (aviso) aviso.textContent = mensagem || '';
+    if (el && el.setAttribute) el.setAttribute('aria-invalid', mensagem ? 'true' : 'false');
+    return mensagem ? nome : null;
+  }
+
+  var UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+  UFS.forEach(function (uf) {
+    var o = document.createElement('option');
+    o.value = uf;
+    o.textContent = uf;
+    if (uf === 'SP') o.selected = true;
+    form.elements.estado.appendChild(o);
+  });
+
+  function validar() {
+    var erros = [];
+    var obrigatorios = ['nome', 'contato', 'telefone', 'ramo', 'cidade', 'motivo', 'requisitante', 'bancoNome', 'agencia', 'conta'];
+    obrigatorios.forEach(function (n) { erros.push(marcar(n, valor(n) ? '' : 'Campo obrigatório.')); });
+
+    erros.push(marcar('tipo', form.elements.tipoCliente.checked || form.elements.tipoFornecedor.checked ? '' : 'Escolha ao menos um tipo.'));
+    erros.push(marcar('documento', documentoValido(apenasDigitos(valor('documento'))) ? '' : 'Informe um CNPJ ou CPF válido.'));
+    erros.push(marcar('email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor('email')) ? '' : 'Informe um e-mail válido.'));
+
+    var pixDoc = apenasDigitos(valor('pixDocumento'));
+    erros.push(marcar('pixDocumento', !pixDoc || documentoValido(pixDoc) ? '' : 'CNPJ/CPF inválido.'));
+
+    erros.push(marcar('aceite', form.elements.aceite.checked ? '' : 'É preciso concordar para continuar.'));
+    return erros.filter(Boolean);
+  }
+
+  function montar() {
+    var pixDoc = apenasDigitos(valor('pixDocumento'));
+    var pix = { documento: pixDoc, banco: valor('pixBanco'), titular: valor('pixTitular'), chave: valor('pixChave') };
+    var temPix = pix.documento || pix.banco || pix.titular || pix.chave;
+    var tipos = [];
+    if (form.elements.tipoCliente.checked) tipos.push('CLIENTE');
+    if (form.elements.tipoFornecedor.checked) tipos.push('FORNECEDOR');
+    return {
+      versao: VERSAO,
+      origem: 'cadastro-publico-fornecedor',
+      geradoEm: new Date().toISOString(),
+      tipos: tipos,
+      empresa: {
+        nome: valor('nome'),
+        documento: apenasDigitos(valor('documento')),
+        email: valor('email').toLowerCase(),
+        telefone: valor('telefone'),
+        contato: valor('contato'),
+        ramo: valor('ramo'),
+        estado: valor('estado'),
+        cidade: valor('cidade'),
+      },
+      solicitacao: { motivo: valor('motivo'), requisitante: valor('requisitante') },
+      dadosBancarios: { banco: valor('bancoNome'), agencia: valor('agencia'), conta: valor('conta') },
+      pix: temPix ? pix : null,
+    };
+  }
+
+  form.elements.documento.addEventListener('input', function (e) {
+    e.target.value = mascaraDocumento(apenasDigitos(e.target.value).slice(0, 14));
+  });
+  form.elements.pixDocumento.addEventListener('input', function (e) {
+    e.target.value = mascaraDocumento(apenasDigitos(e.target.value).slice(0, 14));
+  });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var erros = validar();
+    if (erros.length) {
+      var primeiro = form.elements[erros[0]];
+      if (primeiro && primeiro.focus) primeiro.focus();
+      return;
+    }
+    json = JSON.stringify(montar(), null, 2);
+    previa.textContent = json;
+    form.hidden = true;
+    resultado.hidden = false;
+    resultado.scrollIntoView();
+  });
+
+  document.getElementById('voltar').addEventListener('click', function () {
+    resultado.hidden = true;
+    form.hidden = false;
+  });
+
+  document.getElementById('baixar').addEventListener('click', function () {
+    var doc = apenasDigitos(valor('documento'));
+    var url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'fornecedor-' + doc + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  });
+
+  document.getElementById('copiar').addEventListener('click', function (e) {
+    var botao = e.target;
+    var aviso = function (t) { botao.textContent = t; setTimeout(function () { botao.textContent = 'Copiar conteúdo'; }, 2000); };
+    if (!navigator.clipboard) return aviso('Copie manualmente');
+    navigator.clipboard.writeText(json).then(function () { aviso('Copiado!'); }, function () { aviso('Copie manualmente'); });
+  });
+})();
+</script>
+</body>
+</html>
