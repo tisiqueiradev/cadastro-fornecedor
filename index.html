@@ -8,7 +8,7 @@
     (form-action 'none') e so scripts/estilos deste mesmo diretorio rodam. O resultado e um arquivo JSON baixado
     no computador de quem preenche. Nada aqui conhece o sistema da TFA.
   -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-oV+rg1wzMhhyKENdUu1sZw0Vjhj6Q6zPTjdJ4/KMxdg='; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none'; font-src 'none'; frame-src 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-IONFfrJmThAIoMFztVZ1ayuWPHEftNjz+RRyj/op2k8='; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none'; font-src 'none'; frame-src 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
   <title>Pré-cadastro de fornecedor</title>
@@ -187,12 +187,55 @@ pre {
   .grade { grid-template-columns: 1fr; }
   .opcoes { flex-direction: column; gap: 12px; }
 }
+
+.topo { position: relative; }
+.ajuda-botao { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); min-height: 36px; padding: 0 16px; }
+dialog {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  padding: 24px;
+  color: var(--n-900);
+  background: var(--n-0);
+  border: 1px solid var(--n-200);
+  border-radius: var(--raio);
+  box-shadow: 0 18px 40px rgba(10, 23, 51, 0.25);
+}
+dialog::backdrop { background: rgba(15, 23, 42, 0.55); }
+dialog h2 { font-size: 1.25rem; margin: 0 0 12px; }
+dialog h3 { font-size: 1rem; margin: 20px 0 6px; }
+dialog ol { margin: 0 0 8px; padding-left: 20px; }
+dialog li { margin-bottom: 6px; }
+dialog code { background: var(--n-100); padding: 1px 6px; border-radius: 4px; }
+dialog .aviso { background: var(--n-100); border-radius: 6px; padding: 10px 12px; font-size: 0.8125rem; color: var(--n-700); }
+@media (max-width: 640px) {
+  .ajuda-botao { position: static; transform: none; margin-top: 12px; }
+}
 </style>
 </head>
 <body>
   <header class="topo">
     <h1>Solicitação de pré-cadastro de cliente / fornecedor</h1>
+    <button type="button" id="abrirAjuda" class="ajuda-botao secundario">Ajuda</button>
   </header>
+
+  <dialog id="ajuda" aria-labelledby="ajudaTitulo">
+    <h2 id="ajudaTitulo">Como fazer o seu cadastro</h2>
+    <ol>
+      <li><b>Preencha</b> todos os campos da página. Os dados bancários são obrigatórios; o Pix é opcional.</li>
+      <li>Clique em <b>Gerar solicitação</b>. Confira se está tudo certo na tela que aparece.</li>
+      <li>Clique em <b>Enviar por e-mail</b>. Abrimos o seu programa de e-mail (Outlook, Thunderbird...) já endereçado ao setor de Compras, com os dados no corpo da mensagem. Revise e clique em <b>Enviar</b>.</li>
+    </ol>
+    <h3>O e-mail não abriu?</h3>
+    <p>Isso acontece quando você usa o e-mail pelo navegador (Gmail, Outlook.com) ou não tem um programa de e-mail instalado. Faça assim:</p>
+    <ol>
+      <li>Clique em <b>Baixar arquivo</b>. Ele será salvo na pasta <b>Downloads</b> com o nome <code>fornecedor-CNPJ.json</code>.</li>
+      <li>Escreva um e-mail novo para <b>compras@tfalogistica.com.br</b>, com o assunto &ldquo;Pré-cadastro de fornecedor&rdquo;.</li>
+      <li><b>Anexe</b> o arquivo baixado e envie.</li>
+    </ol>
+    <p class="aviso">Esta página não envia nada sozinha: seus dados ficam no seu computador até você mandar o e-mail. O retorno da análise é de até <b>72 horas úteis</b>.</p>
+    <div class="acoes"><button type="button" id="fecharAjuda">Entendi</button></div>
+  </dialog>
 
   <div class="layout">
     <aside class="lateral" aria-label="Informações">
@@ -470,6 +513,13 @@ pre {
     resultado.hidden = false;
     resultado.scrollIntoView();
   });
+
+  // Ajuda: abre sozinha ao entrar na pagina (sem guardar nada no navegador) e pode ser reaberta pelo botao.
+  var ajuda = document.getElementById('ajuda');
+  var abrirAjuda = function () { if (ajuda.showModal && !ajuda.open) ajuda.showModal(); };
+  document.getElementById('abrirAjuda').addEventListener('click', abrirAjuda);
+  document.getElementById('fecharAjuda').addEventListener('click', function () { ajuda.close(); });
+  abrirAjuda();
 
   document.getElementById('voltar').addEventListener('click', function () {
     resultado.hidden = true;
