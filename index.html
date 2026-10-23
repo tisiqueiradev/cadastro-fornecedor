@@ -8,7 +8,7 @@
     (form-action 'none') e so scripts/estilos deste mesmo diretorio rodam. O resultado e um arquivo JSON baixado
     no computador de quem preenche. Nada aqui conhece o sistema da TFA.
   -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xlOKJI1rVGpO1yj94Ee8Py6foh+Zn5CAPv0GYbPf1Tw='; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none'; font-src 'none'; frame-src 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-oV+rg1wzMhhyKENdUu1sZw0Vjhj6Q6zPTjdJ4/KMxdg='; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none'; font-src 'none'; frame-src 'none'; object-src 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
   <title>Pré-cadastro de fornecedor</title>
@@ -320,8 +320,9 @@ pre {
 
       <section id="resultado" class="cartao" hidden>
         <h2>Solicitação pronta</h2>
-        <p>Baixe o arquivo e envie ao setor de Compras da TFA Logística. Confira os dados antes de enviar.</p>
+        <p>Confira os dados e clique em <b>Enviar por e-mail</b>: abrimos o seu programa de e-mail já endereçado ao setor de Compras da TFA Logística. Se preferir, baixe o arquivo e anexe ao e-mail.</p>
         <div class="acoes">
+          <button type="button" id="enviar">Enviar por e-mail</button>
           <button type="button" id="baixar">Baixar arquivo</button>
           <button type="button" id="copiar" class="secundario">Copiar conteúdo</button>
           <button type="button" id="voltar" class="secundario">Editar dados</button>
@@ -485,6 +486,29 @@ pre {
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  });
+
+  var DESTINATARIO = 'compras@tfalogistica.com.br';
+  var LIMITE_DO_LINK = 1800;
+
+  document.getElementById('enviar').addEventListener('click', function (e) {
+    var botao = e.target;
+    var dados = JSON.parse(json);
+    var assunto = 'Pre-cadastro de fornecedor - ' + dados.empresa.nome + ' (' + dados.empresa.documento + ')';
+    var cabecalho = 'Solicitacao de pre-cadastro de cliente/fornecedor.\n\nDados (JSON):\n';
+    var link = function (corpo) {
+      return 'mailto:' + DESTINATARIO + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
+    };
+    var completo = link(cabecalho + JSON.stringify(dados));
+    var aviso = function (t) { botao.textContent = t; setTimeout(function () { botao.textContent = 'Enviar por e-mail'; }, 4000); };
+    // Muitos programas de e-mail cortam links longos: nesse caso o conteudo vai para a area de transferencia.
+    if (completo.length <= LIMITE_DO_LINK) {
+      window.location.href = completo;
+      return;
+    }
+    if (navigator.clipboard) navigator.clipboard.writeText(json).catch(function () {});
+    window.location.href = link(cabecalho + '(cole aqui o conteudo copiado, com Ctrl+V)');
+    aviso('Cole o conteúdo no e-mail');
   });
 
   document.getElementById('copiar').addEventListener('click', function (e) {
